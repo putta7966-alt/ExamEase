@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ExamEase — Smart Exam Prep</title>
+  <style>
+    :root{--accent:#4f46e5;--bg:#f7fbf7;--card:#ffffff;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#111}
+    header{background:linear-gradient(90deg,#dddddd,rgb(205, 205, 42));padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e6e9f2}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(180deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+    .container{max-width:1100px;margin:22px auto;padding:0 20px}
+    .grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
+    .card{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(171, 182, 204, 0.415)}
+    h2{margin:0 0 10px 0;font-size:18px}
+    .small{font-size:13px;color:var(--muted)}
+    /* planner list */
+    .task{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #eef0ff}
+    .task:last-child{border-bottom:none}
+    .task-left{display:flex;gap:10px;align-items:center}
+    .checkbox{width:18px;height:18px;border-radius:4px;border:1px solid #37a7b8;display:inline-grid;place-items:center}
+    .btn{background:var(--accent);color:rgb(247, 247, 247);padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+    .ghost{background:transparent;border:1px solid #de6114;color:#374151}
+    .reminder-item{padding:10px;border-radius:8px;margin-bottom:8px;background:#202112}
+    .progress-bar{height:12px;background:#2ebc2e;border-radius:8px;overflow:hidden}
+    .progress-inner{height:100%;background:linear-gradient(90deg,var(--accent),#2a0583);width:0}
+    .quiz-question{margin-bottom:12px}
+    footer{margin:30px 0 80px 0;text-align:center;color:var(--muted);font-size:13px}
+    /* responsive */
+    @media (max-width:980px){.grid{grid-template-columns:1fr;}.container{padding:0 12px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">EE</div>
+      <div>
+        <div style="font-weight:700">ExamEase</div>
+        <div class="small">Smart Study Planner & Reminder</div>
+      </div>
+    </div>
+    <div>
+      <button class="btn" id="addTaskBtn">+ Add Task</button>
+      <button class="ghost" id="openQuizBtn" style="margin-left:8px">Take Quiz</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <section>
+        <div class="card">
+          <h2>Today's Planner</h2>
+          <div class="small">Plan your study sessions and set reminders</div>
+          <div id="taskList" style="margin-top:12px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn" id="addQuickTask">Add Quick Task</button>
+            <button class="ghost" id="clearCompleted">Clear Completed</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h2>Progress</h2>
+          <div class="small">Weekly completion rate</div>
+          <div style="margin-top:12px">
+            <div class="progress-bar"><div id="progressInner" class="progress-inner"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px"><div id="completedCount">0</div><div id="totalCount">0</div></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h2>Notes (Quick)</h2>
+          <textarea id="notes" rows="4" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e9eefc"></textarea>
+          <div style="margin-top:8px;display:flex;justify-content:flex-end"><button class="btn" id="saveNotes">Save Note</button></div>
+        </div>
+      </section>
+
+      <aside>
+        <div class="card">
+          <h2>Reminders</h2>
+          <div class="small">Upcoming reminders (browser session)</div>
+          <div id="reminderList" style="margin-top:12px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn" id="addReminderBtn">Set Reminder</button>
+            <button class="ghost" id="notifyPermBtn">Enable Notifications</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h2>Quick Quiz</h2>
+          <div class="small">Test yourself with short quizzes</div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+            <div id="quizSummary">No attempts yet.</div>
+            <button class="btn" id="startQuiz">Start Sample Quiz</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h2>Settings</h2>
+          <div class="small">Preferences</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            <label><input type="checkbox" id="autoReminders"> Auto show due reminders</label>
+            <label><input type="checkbox" id="soundNotif"> Sound for reminders</label>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Modals (hidden by default) -->
+    <div id="modal" style="position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,0.5);z-index:50">
+      <div style="width:540px;max-width:94%;background:var(--card);padding:16px;border-radius:12px">
+        <div id="modalContent"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="ghost" id="modalClose">Close</button></div>
+      </div>
+    </div>
+
+  </main>
+  <footer>ExamEase — built for fast, focused exam prep</footer>
+
+  <script>
+    // Simple single-file app using localStorage
+    const storage = {
+      tasks: JSON.parse(localStorage.getItem('ee_tasks')||'[]'),
+      reminders: JSON.parse(localStorage.getItem('ee_reminders')||'[]'),
+      notes: localStorage.getItem('ee_notes')||'',
+      quizStats: JSON.parse(localStorage.getItem('ee_quiz')||'{}')
+    }
+
+    // Utilities
+    const $ = id => document.getElementById(id)
+    function save(){
+      localStorage.setItem('ee_tasks', JSON.stringify(storage.tasks))
+      localStorage.setItem('ee_reminders', JSON.stringify(storage.reminders))
+      localStorage.setItem('ee_notes', storage.notes)
+      localStorage.setItem('ee_quiz', JSON.stringify(storage.quizStats))
+      renderAll()
+    }
+
+    function renderAll(){ renderTasks(); renderProgress(); renderReminders(); renderNotes(); renderQuizSummary(); }
+
+    // Tasks
+    function renderTasks(){
+      const container = $('taskList'); container.innerHTML=''
+      if(storage.tasks.length===0){ container.innerHTML='<div class="small">No tasks yet. Add one!</div>'; return }
+      storage.tasks.forEach((t,idx)=>{
+        const el = document.createElement('div'); el.className='task'
+        el.innerHTML = `<div class="task-left"><label class="checkbox"><input type=checkbox ${t.done? 'checked':''} data-idx="${idx}" style="opacity:0;width:0;height:0;position:absolute"></label>
+                        <div><div style="font-weight:600">${escapeHtml(t.title)}</div><div class="small">${t.time? t.time: ''} ${t.note? ' • '+escapeHtml(t.note):''}</div></div></div>
+                        <div><button class="ghost" data-idx="${idx}" onclick="editTask(${idx})">Edit</button> <button class="ghost" data-idx="${idx}" onclick="deleteTask(${idx})">Delete</button></div>`
+        container.appendChild(el)
+        // checkbox listener
+        el.querySelector('input[type=checkbox]').addEventListener('change', e=>{
+          storage.tasks[idx].done = e.target.checked
+          save()
+        })
+      })
+    }
+
+    function addTask(title, time, note){ storage.tasks.push({title, time, note, done:false}); save(); }
+    function deleteTask(i){ storage.tasks.splice(i,1); save(); }
+    function editTask(i){
+      openModal(`<h3>Edit Task</h3>
+        <div style=\"display:flex;flex-direction:column;gap:8px;margin-top:8px\">
+          <input id=\"editTitle\" value=\"${escapeHtml(storage.tasks[i].title)}\" style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\" />
+          <input id=\"editTime\" value=\"${storage.tasks[i].time||''}\" placeholder=\"Time (optional)\" style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\" />
+          <textarea id=\"editNote\" rows=3 style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\">${escapeHtml(storage.tasks[i].note||'')}</textarea>
+          <div style=\"display:flex;justify-content:flex-end;gap:8px\"><button class=\"btn\" id=\"saveEdit\">Save</button></div>
+        </div>`)
+      $('saveEdit').addEventListener('click', ()=>{
+        storage.tasks[i].title = $('editTitle').value || storage.tasks[i].title
+        storage.tasks[i].time = $('editTime').value
+        storage.tasks[i].note = $('editNote').value
+        closeModal(); save()
+      })
+    }
+
+    // Progress
+    function renderProgress(){
+      const total = storage.tasks.length
+      const done = storage.tasks.filter(t=>t.done).length
+      $('completedCount').innerText = done + ' completed'
+      $('totalCount').innerText = total + ' total'
+      const pct = total? Math.round((done/total)*100):0
+      $('progressInner').style.width = pct + '%'
+    }
+
+    // Reminders
+    function renderReminders(){
+      const list = $('reminderList'); list.innerHTML=''
+      if(storage.reminders.length===0){ list.innerHTML='<div class="small">No reminders set.</div>'; return }
+      storage.reminders.forEach((r,idx)=>{
+        const el = document.createElement('div'); el.className='reminder-item'
+        el.innerHTML = `<div style=\"display:flex;justify-content:space-between;align-items:center\"><div><strong>${escapeHtml(r.title)}</strong><div class=\"small\">${r.time}</div></div><div><button class=\"ghost\" onclick=\"deleteReminder(${idx})\">Remove</button></div></div>`
+        list.appendChild(el)
+      })
+    }
+
+    function addReminder(title, timeISO){ storage.reminders.push({title, time:timeISO}); scheduleReminder(storage.reminders.length-1); save(); }
+    function deleteReminder(i){ storage.reminders.splice(i,1); save(); }
+
+    // Schedule reminders only for current session (simple)
+    function scheduleAllReminders(){ storage.reminders.forEach((r,i)=> scheduleReminder(i)) }
+    function scheduleReminder(i){
+      try{
+        const r = storage.reminders[i]
+        const now = Date.now(); const then = new Date(r.time).getTime()
+        if(isNaN(then)) return
+        const diff = then - now
+        if(diff>0 && diff<1000*60*60*24*7){ // schedule only if within 7 days for demo
+          setTimeout(()=> triggerReminder(i), diff)
+        }
+      }catch(e){}
+    }
+    function triggerReminder(i){
+      const r = storage.reminders[i]
+      if(!r) return
+      if(Notification && Notification.permission==='granted'){
+        new Notification('ExamEase Reminder', { body: r.title })
+      } else {
+        alert('Reminder: '+r.title)
+      }
+      if($('soundNotif').checked){ playDing() }
+    }
+
+    function playDing(){ const s = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA='); s.play().catch(()=>{}) }
+
+    // Notes
+    function renderNotes(){ $('notes').value = storage.notes }
+
+    // Quiz (very simple sample)
+    const sampleQuiz = [
+      {q:'What is the usual duration of a B.Tech semester exam?', options:['1 hour','3 hours','6 hours','2 hours'], a:1},
+      {q:'Which study technique involves short, spaced repetitions?', options:['Massed practice','Pomodoro','Spaced repetition','Highlighting'], a:2}
+    ]
+
+    function renderQuizSummary(){
+      const s = storage.quizStats
+      if(!s.attempts) $('quizSummary').innerText = 'No attempts yet.'
+      else $('quizSummary').innerText = `Attempts: ${s.attempts} • Best score: ${s.best||0}%` 
+    }
+
+    function startQuiz(){
+      let i=0,score=0,answers=[]
+      openModal('<h3>Quiz</h3><div id="quizContainer"></div>')
+      function show(){
+        if(i>=sampleQuiz.length){
+          const pct = Math.round((score/sampleQuiz.length)*100)
+          storage.quizStats.attempts = (storage.quizStats.attempts||0)+1
+          storage.quizStats.best = Math.max(storage.quizStats.best||0,pct)
+          save();
+          $('quizContainer').innerHTML = `<div style="font-weight:700">Score: ${pct}%</div><div class="small">You got ${score} out of ${sampleQuiz.length}.</div>`
+          return
+        }
+        const cur = sampleQuiz[i]
+        $('quizContainer').innerHTML = `<div class=\"quiz-question\"><strong>Q${i+1}.</strong> ${escapeHtml(cur.q)}</div>` + cur.options.map((op,idx)=>`<div style=\"margin-bottom:6px\"> <label><input type=radio name=op value=\"${idx}\"> ${escapeHtml(op)}</label></div>`).join('') + `<div style=\"display:flex;justify-content:flex-end;margin-top:10px\"><button class=\"btn\" id=\"nextQ\">Next</button></div>`
+        $('nextQ').addEventListener('click', ()=>{
+          const sel = document.querySelector('input[name=op]:checked')
+          if(sel && parseInt(sel.value)===cur.a){ score++ }
+          i++
+          show()
+        })
+      }
+      show()
+    }
+
+    // Modal helpers
+    function openModal(html){ $('modalContent').innerHTML = html; $('modal').style.display='flex' }
+    function closeModal(){ $('modal').style.display='none' }
+    $('modalClose').addEventListener('click', closeModal)
+
+    // Small helper to escape HTML
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') }
+
+    // Bind UI
+    $('addTaskBtn').addEventListener('click', ()=>{
+      openModal(`<h3>Add Task</h3>
+        <div style=\"display:flex;flex-direction:column;gap:8px;margin-top:8px\">
+          <input id=\"taskTitle\" placeholder=\"Task title (e.g., Revise Maths chapter 3)\" style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\" />
+          <input id=\"taskTime\" placeholder=\"Time (optional) e.g. 2025-12-11 18:00\" style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\" />
+          <textarea id=\"taskNote\" rows=3 placeholder=\"Notes\" style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\"></textarea>
+          <div style=\"display:flex;justify-content:flex-end;gap:8px\"><button class=\"btn\" id=\"saveTask\">Add</button></div>
+        </div>
+      `)
+      $('saveTask').addEventListener('click', ()=>{
+        const title = $('taskTitle').value.trim(); if(!title) return alert('Enter title')
+        addTask(title, $('taskTime').value.trim(), $('taskNote').value.trim()); closeModal();
+      })
+    })
+
+    $('addQuickTask').addEventListener('click', ()=>{ const t = prompt('Task title'); if(t) addTask(t,'','') })
+    $('clearCompleted').addEventListener('click', ()=>{ storage.tasks = storage.tasks.filter(t=>!t.done); save() })
+
+    // Reminders
+    $('addReminderBtn').addEventListener('click', ()=>{
+      openModal(`<h3>Set Reminder</h3>
+        <div style=\"display:flex;flex-direction:column;gap:8px;margin-top:8px\">
+          <input id=\"remTitle\" placeholder=\"Reminder (e.g., Submit assignment)\" style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\" />
+          <input id=\"remTime\" type=\"datetime-local\" style=\"padding:8px;border-radius:8px;border:1px solid #e6e6f2\" />
+          <div style=\"display:flex;justify-content:flex-end;gap:8px\"><button class=\"btn\" id=\"saveRem\">Save</button></div>
+        </div>`)
+      $('saveRem').addEventListener('click', ()=>{
+        const t = $('remTitle').value.trim(); const tm = $('remTime').value
+        if(!t || !tm) return alert('Enter title and time')
+        addReminder(t, tm); closeModal();
+      })
+    })
+
+    $('notifyPermBtn').addEventListener('click', ()=>{
+      if(!('Notification' in window)) return alert('Notifications not supported in this browser')
+      Notification.requestPermission().then(p=> alert('Permission: '+p))
+    })
+
+    // Quiz
+    $('startQuiz').addEventListener('click', startQuiz)
+    $('openQuizBtn').addEventListener('click', startQuiz)
+
+    // Notes
+    $('saveNotes').addEventListener('click', ()=>{ storage.notes = $('notes').value; save(); alert('Notes saved') })
+
+    // Init
+    renderAll(); scheduleAllReminders();
+
+    // Start with a tiny sample dataset if none
+    if(storage.tasks.length===0){
+      addTask('Revise Math - Chapter 3','2025-12-12 18:00','Focus on integrals')
+      addTask('Practice Physics problems','2025-12-13 16:00','Numerical questions')
+    }
+
+    // Modal and misc
+    window.editTask = editTask; window.deleteTask = deleteTask; window.deleteReminder = deleteReminder; window.startQuiz = startQuiz
+
+  </script>
+</body>
+</html>
